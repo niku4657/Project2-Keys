@@ -23,6 +23,9 @@ port = 10001
 def pad_message(message):
     return message + " " * ((16 - len(message)) % 16)
 
+#Added function to unpad message before decrypting
+def unpad_message(message):
+    return message[:-ord(message[len(message)-1:])]
 
 # Write a function that decrypts a message using the server's private key
 def decrypt_key(session_key):
@@ -33,13 +36,19 @@ def decrypt_key(session_key):
 # Write a function that decrypts a message using the session key
 def decrypt_message(client_message, session_key):
     # TODO: Implement this function
-    pass
+    message = base64.b64decode(message)
+    iv = message[:16]
+    cipher = AES.new(session_key, AES.MODE_CBC, iv)
+    return unpad_message(cipher.decrypt(message[16:]))
 
 
 # Encrypt a message using the session key
 def encrypt_message(message, session_key):
     # TODO: Implement this function
-    pass
+    message = pad_message(message)
+    iv = Random.new().read(AES.block_size)
+    cipher = AES.new(session_key, AES.MODE_CBC, iv)
+    return base64.b64encode(iv + cipher.encrypt(message))
 
 
 # Receive 1024 bytes from the client
@@ -105,11 +114,14 @@ def main():
                 ciphertext_message = receive_message(connection)
 
                 # TODO: Decrypt message from client
-
+                decrypt_message(ciphertext_message, plaintext_key)
+                
                 # TODO: Split response from user into the username and password
-
+                
                 # TODO: Encrypt response to client
-
+                ciphertext_response = "Temporary" # FIX
+                encrypt_message(ciphertext_response, encrypted_key)
+                
                 # Send encrypted response
                 send_message(connection, ciphertext_response)
             finally:

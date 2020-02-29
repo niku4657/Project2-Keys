@@ -16,6 +16,9 @@
 import socket
 import os
 from Crypto.Cipher import AES
+from Crypto import Random
+import base64
+import hashlib
 
 
 host = "localhost"
@@ -27,30 +30,38 @@ port = 10001
 def pad_message(message):
     return message + " "*((16-len(message))%16)
 
+#Added function to unpad message before decrypting
+def unpad_message(message):
+    return message[:-ord(message[len(message)-1:])]
 
 # TODO: Generate a cryptographically random AES key
 def generate_key():
     # TODO: Implement this function
-    pass
+    return key = get_random_bytes(16)
 
 
 # Takes an AES session key and encrypts it using the appropriate
 # key and return the value
 def encrypt_handshake(session_key):
     # TODO: Implement this function
-    pass
+    return cipher = AES.new(session_key, AES.MODE_EAX)
 
 
 # Encrypts the message using AES. Same as server function
 def encrypt_message(message, session_key):
     # TODO: Implement this function
-    pass
+    message = pad_message(message)
+    iv = Random.new().read(AES.block_size)
+    cipher = AES.new(session_key, AES.MODE_CBC, iv)
+    return base64.b64encode(iv + cipher.encrypt(message))
 
 
 # Decrypts the message using AES. Same as server function
 def decrypt_message(message, session_key):
     # TODO: Implement this function
-    pass
+    iv = message[:16]
+    cipher = AES.new(session_key, AES.MODE_CBC, iv)
+    return unpad_message(cipher.decrypt(message[16:]))
 
 
 # Sends a message over TCP
@@ -65,6 +76,7 @@ def receive_message(sock):
 
 
 def main():
+    generate_key()
     user = input("What's your username? ")
     password = input("What's your password? ")
 
@@ -95,8 +107,10 @@ def main():
             exit(0)
 
         # TODO: Encrypt message and send to server
+        encrypt_message(message, key)
 
         # TODO: Receive and decrypt response from server
+        decrypt_message(message, key)
     finally:
         print('closing socket')
         sock.close()
