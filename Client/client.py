@@ -37,21 +37,23 @@ def unpad_message(message):
 # TODO: Generate a cryptographically random AES key
 def generate_key():
     # TODO: Implement this function
-    return key = get_random_bytes(16)
+    return os.urandom(16)
 
 
 # Takes an AES session key and encrypts it using the appropriate
 # key and return the value
 def encrypt_handshake(session_key):
     # TODO: Implement this function
-    return cipher = AES.new(session_key, AES.MODE_EAX)
+    public = RSA.importKey(open('ppkey.txt.pub','r').read())
+    encrypt = str(public.encrypt(session_key, 32))
+    return encrypt
 
 
 # Encrypts the message using AES. Same as server function
 def encrypt_message(message, session_key):
     # TODO: Implement this function
     message = pad_message(message)
-    iv = Random.new().read(AES.block_size)
+    iv = Random.new().read(16)
     cipher = AES.new(session_key, AES.MODE_CBC, iv)
     return base64.b64encode(iv + cipher.encrypt(message))
 
@@ -59,9 +61,10 @@ def encrypt_message(message, session_key):
 # Decrypts the message using AES. Same as server function
 def decrypt_message(message, session_key):
     # TODO: Implement this function
+    message = base64.b64decode(message)
     iv = message[:16]
     cipher = AES.new(session_key, AES.MODE_CBC, iv)
-    return unpad_message(cipher.decrypt(message[16:]))
+    return unpad_message(cipher.decrypt(message[16:])).decode('utf-8')
 
 
 # Sends a message over TCP
@@ -107,10 +110,13 @@ def main():
             exit(0)
 
         # TODO: Encrypt message and send to server
-        encrypt_message(message, key)
+        encryptedMessage = encrypt_message(message, key)
+        send_message(sock, em)
 
         # TODO: Receive and decrypt response from server
-        decrypt_message(message, key)
+        if(receive_message(sock)):
+            print("client received_message", decrypt_message(receive_message(sock), key))
+     
     finally:
         print('closing socket')
         sock.close()

@@ -30,7 +30,9 @@ def unpad_message(message):
 # Write a function that decrypts a message using the server's private key
 def decrypt_key(session_key):
     # TODO: Implement this function
-    pass
+    private = RSA.importKey(open('ppkey.txt', 'r').read())
+    encrypted_tuple = eval(session_key)
+    return private.decrypt(encrypted_tuple)
 
 
 # Write a function that decrypts a message using the session key
@@ -39,14 +41,14 @@ def decrypt_message(client_message, session_key):
     message = base64.b64decode(message)
     iv = message[:16]
     cipher = AES.new(session_key, AES.MODE_CBC, iv)
-    return unpad_message(cipher.decrypt(message[16:]))
+    return unpad_message(cipher.decrypt(message[16:])).decode('utf-8')
 
 
 # Encrypt a message using the session key
 def encrypt_message(message, session_key):
     # TODO: Implement this function
     message = pad_message(message)
-    iv = Random.new().read(AES.block_size)
+    iv = Random.new().read(16)
     cipher = AES.new(session_key, AES.MODE_CBC, iv)
     return base64.b64encode(iv + cipher.encrypt(message))
 
@@ -114,16 +116,20 @@ def main():
                 ciphertext_message = receive_message(connection)
 
                 # TODO: Decrypt message from client
-                decrypt_message(ciphertext_message, plaintext_key)
+                plainMessage = decrypt_message(ciphertext_message, plaintext_key)
                 
                 # TODO: Split response from user into the username and password
+                user, password = plainMessage.split()
+                if verify_hash(user, password):
+                    plainResponse = "User successfully authenticated!"
+                else:
+                    plainResponse = "Password or username incorrect"
                 
                 # TODO: Encrypt response to client
-                ciphertext_response = "Temporary" # FIX
-                encrypt_message(ciphertext_response, encrypted_key)
+                cipheredResponse = encrypt_message(plainResponse, encrypted_key)
                 
                 # Send encrypted response
-                send_message(connection, ciphertext_response)
+                send_message(connection, cipheredResponse)
             finally:
                 # Clean up the connection
                 connection.close()
