@@ -16,6 +16,7 @@
 import socket
 import os
 from Crypto.Cipher import AES
+from Crypto.PublicKey import RSA
 from Crypto import Random
 import base64
 import hashlib
