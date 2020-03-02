@@ -12,8 +12,6 @@ user = input("Enter a username: ")
 password = input("Enter a password: ")
 
 # TODO: Create a salt and hash the password
-# salt = Kathleen implemented this
-# hashed_password = Kathleen created this
 salt = str(os.urandom(16))
 hashed_password = hashlib.sha512((password + salt).encode('utf-8')).hexdigest()
 

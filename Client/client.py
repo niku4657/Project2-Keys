@@ -46,8 +46,8 @@ def generate_key():
 def encrypt_handshake(session_key):
     # TODO: Implement this function
     public = RSA.importKey(open('ppkey.txt.pub','r').read())
-    encrypt = str(public.encrypt(session_key, 32))
-    return encrypt
+    encrypted = str(public.encrypt(session_key, 16))
+    return encrypted
 
 
 # Encrypts the message using AES. Same as server function

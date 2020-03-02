@@ -84,7 +84,7 @@ def verify_hash(user, password):
             line = line.split("\t")
             if line[0] == user:
                 # TODO: Generate the hashed password
-                # hashed_password =
+                hashed_password = hashlib.sha512((password + salt).encode('utf-8')).hexdigest()
                 return hashed_password == line[2]
         reader.close()
     except FileNotFoundError:
