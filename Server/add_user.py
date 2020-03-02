@@ -5,7 +5,7 @@
     Authors: Matt Niemiec and Abigail Fernandes
     The solution contains the same number of lines (plus imports)
 """
-import hashlib 
+import hashlib
 import os
 
 user = input("Enter a username: ")

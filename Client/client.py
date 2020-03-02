@@ -31,9 +31,11 @@ port = 10001
 def pad_message(message):
     return message + " "*((16-len(message))%16)
 
-#Added function to unpad message before decrypting
+# #Added function to unpad message before decrypting
+# def unpad_message(message):
+#     return message[:-ord(message[len(message)-1:])]
 def unpad_message(message):
-    return message[:-ord(message[len(message)-1:])]
+    return message.rstrip()
 
 # TODO: Generate a cryptographically random AES key
 def generate_key():
@@ -70,6 +72,8 @@ def decrypt_message(message, session_key):
 
 # Sends a message over TCP
 def send_message(sock, message):
+    if type(message) != bytes:
+        message = message.encode()
     sock.sendall(message)
 
 
@@ -79,8 +83,54 @@ def receive_message(sock):
     return data
 
 
+# def main():
+#     generate_key()
+#     user = input("What's your username? ")
+#     password = input("What's your password? ")
+#
+#     # Create a TCP/IP socket
+#     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#
+#     # Connect the socket to the port where the server is listening
+#     server_address = (host, port)
+#     print('connecting to {} port {}'.format(*server_address))
+#     sock.connect(server_address)
+#
+#     try:
+#         # Message that we need to send
+#         message = user + ' ' + password
+#
+#         # Generate random AES key
+#         key = generate_key()
+#
+#         # Encrypt the session key using server's public key
+#         encrypted_key = encrypt_handshake(key)
+#
+#         # Initiate handshake
+#         send_message(sock, encrypted_key)
+#
+#         # Listen for okay from server (why is this necessary?)
+#         if receive_message(sock).decode() != "okay":
+#             print("Couldn't connect to server")
+#             exit(0)
+#
+#         # TODO: Encrypt message and send to server
+#         encryptedMessage = encrypt_message(message, key)
+#         send_message(sock, encryptedMessage)
+#
+#         # TODO: Receive and decrypt response from server
+#         if(receive_message(sock)):
+#             print("client received_message", decrypt_message(receive_message(sock), key))
+#
+#     finally:
+#         print('closing socket')
+#         sock.close()
+
+
 def main():
     generate_key()
+
+
     user = input("What's your username? ")
     password = input("What's your password? ")
 
@@ -111,13 +161,8 @@ def main():
             exit(0)
 
         # TODO: Encrypt message and send to server
-        encryptedMessage = encrypt_message(message, key)
-        send_message(sock, em)
 
         # TODO: Receive and decrypt response from server
-        if(receive_message(sock)):
-            print("client received_message", decrypt_message(receive_message(sock), key))
-     
     finally:
         print('closing socket')
         sock.close()

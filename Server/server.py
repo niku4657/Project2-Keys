@@ -29,34 +29,36 @@ port = 10001
 def pad_message(message):
     return message + " " * ((16 - len(message)) % 16)
 
-#Added function to unpad message before decrypting
-def unpad_message(message):
-    return message[:-ord(message[len(message)-1:])]
+# Added function to unpad message before decrypting
+def unpad_message(m):
+    return m.rstrip()
 
 # Write a function that decrypts a message using the server's private key
 def decrypt_key(session_key):
     # TODO: Implement this function
-    private = RSA.importKey(open('ppkey.txt', 'r').read())
+    privatekey = RSA.importKey(open('ppkey.txt', 'r').read())
     encrypted_tuple = eval(session_key)
-    return private.decrypt(encrypted_tuple)
+    return privatekey.decrypt(encrypted_tuple)
 
 
 # Write a function that decrypts a message using the session key
+# MODE_CBC = cipher block chaining
 def decrypt_message(client_message, session_key):
     # TODO: Implement this function
-    message = base64.b64decode(message)
-    iv = message[:16]
-    cipher = AES.new(session_key, AES.MODE_CBC, iv)
-    return unpad_message(cipher.decrypt(message[16:])).decode('utf-8')
+    message = base64.b64decode(client_message)
+    ivector = Random.new().read(16) #message[:16]
+    cipher = AES.new(session_key, AES.MODE_CBC, ivector )
+    d_message = cipher.decrypt(cipher)
+    return unpad_message(d_message).decode('utf-8')
 
 
 # Encrypt a message using the session key
 def encrypt_message(message, session_key):
     # TODO: Implement this function
     message = pad_message(message)
-    iv = Random.new().read(16)
-    cipher = AES.new(session_key, AES.MODE_CBC, iv)
-    return base64.b64encode(iv + cipher.encrypt(message))
+    ivector = Random.new().read(16)
+    cipher = AES.new(session_key, AES.MODE_CBC, ivector)
+    return base64.b64encode(ivector + cipher.encrypt(message))
 
 
 # Receive 1024 bytes from the client
@@ -84,7 +86,7 @@ def verify_hash(user, password):
             line = line.split("\t")
             if line[0] == user:
                 # TODO: Generate the hashed password
-                # hashed_password =
+                hashed_password = hashlib.sha512((password + salt_string).encode()).hexdigest()
                 return hashed_password == line[2]
         reader.close()
     except FileNotFoundError:
@@ -122,20 +124,20 @@ def main():
                 ciphertext_message = receive_message(connection)
 
                 # TODO: Decrypt message from client
-                plainMessage = decrypt_message(ciphertext_message, plaintext_key)
-                
+                original = decrypt_message(ciphertext_message, plaintext_key)
+
                 # TODO: Split response from user into the username and password
-                user, password = plainMessage.split()
+                user, password = original.split()
                 if verify_hash(user, password):
-                    plainResponse = "User successfully authenticated!"
+                    response = "User successfully authenticated!"
                 else:
-                    plainResponse = "Password or username incorrect"
-                
+                    response = "Password or username incorrect"
+
                 # TODO: Encrypt response to client
-                cipheredResponse = encrypt_message(plainResponse, encrypted_key)
-                
+                response2client = encrypt_message(response, plaintext_key)#encrypted_key)
+
                 # Send encrypted response
-                send_message(connection, cipheredResponse)
+                send_message(connection, response2client)
             finally:
                 # Clean up the connection
                 connection.close()
