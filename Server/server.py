@@ -30,8 +30,8 @@ def pad_message(message):
     return message + " " * ((16 - len(message)) % 16)
 
 # Added function to unpad message before decrypting
-def unpad_message(m):
-    return m.rstrip()
+def unpad_message(message):
+    return message.rstrip()
 
 # Write a function that decrypts a message using the server's private key
 def decrypt_key(session_key):
@@ -48,7 +48,7 @@ def decrypt_message(client_message, session_key):
     message = base64.b64decode(client_message)
     ivector = Random.new().read(16) #message[:16]
     cipher = AES.new(session_key, AES.MODE_CBC, ivector )
-    d_message = cipher.decrypt(cipher)
+    d_message = cipher.decrypt(message)
     return unpad_message(d_message).decode('utf-8')
 
 
@@ -127,7 +127,9 @@ def main():
                 original = decrypt_message(ciphertext_message, plaintext_key)
 
                 # TODO: Split response from user into the username and password
-                user, password = original.split()
+                splitOriginal = original.splitlines(0)
+                user = splitOriginal[0]
+                password = splitOriginal[1]
                 if verify_hash(user, password):
                     response = "User successfully authenticated!"
                 else:
