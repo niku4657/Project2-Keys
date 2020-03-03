@@ -61,26 +61,69 @@ def decrypt_key(session_key):
 #     cipher = AES.new(session_key, AES.MODE_CBC, ivector)
 #     return base64.b64encode(cipher.encrypt(message))
 
+#
+# def encrypt_message(message, session_key):
+#     # TODO: Implement this function
+#     ivector = message[:16]
+#     message = pad_message(message)
+#     # ivector = Random.new().read(16)
+#
+#     cipher = AES.new(session_key, AES.MODE_CBC, ivector)
+#
+#     return base64.b64encode(cipher.encrypt(message))
+#
+#
+# # Decrypts the message using AES. Same as server function
+# def decrypt_message(message, session_key):
+#     # TODO: Implement this function
+#     # ivector = message[:16]
+#     decode_message = base64.b64decode(message)
+#     # ivector = Random.new().read(16)
+#     ivector = message[:16]
+#
+#     cipher = AES.new(session_key, AES.MODE_CBC, ivector)
+#
+#     return unpad_message(cipher.decrypt(decode_message)).decode('utf-8')
 
-def encrypt_message(message, session_key):
-    # TODO: Implement this function
-    message = pad_message(message)
-    ivector = Random.new().read(16)
-    cipher = AES.new(session_key, AES.MODE_CBC, ivector)
-    return base64.b64encode(ivector + cipher.encrypt(message))
+def encrypt_message(message,session_key):
+    cipher = AES.new(session_key)
+    return cipher.encrypt(pad_message(message))
+
+def decrypt_message(message,session_key):
+    cipher = AES.new(session_key)
+    return cipher.decrypt(unpad_message(message))
 
 
-# Decrypts the message using AES. Same as server function
-def decrypt_message(message, session_key):
-    # TODO: Implement this function
-    ivector = decode_message[:16]
-    decode_message = base64.b64decode(message)
-    # ivector = Random.new().read(16)
-
-
-    cipher = AES.new(session_key, AES.MODE_CBC, ivector)
-
-    return unpad_message(cipher.decrypt(decode_message[16:])).decode('utf-8')
+# TODO: Write a function that decrypts a message using the session key
+# def decrypt_message(client_message, session_key):
+#
+#
+#     decoded_message = base64.b64decode(client_message)
+#
+#
+#
+#     cipher = AES.new(session_key, AES.MODE_CBC)
+#
+#     decrypted_message = cipher.decrypt(decoded_message)
+#
+#     return unpad_message(decrypted_message).decode('utf-8')
+#
+#
+#
+#
+#
+# # TODO: Encrypt a message using the session key
+#
+# def encrypt_message(message, session_key):
+#
+#     padded_message = pad_message(message)
+#
+#
+#
+#
+#     cipher = AES.new(session_key, AES.MODE_ECB)
+#
+#     return base64.b64encode(cipher.encrypt(padded_message))
 
 
 # Receive 1024 bytes from the client
@@ -108,8 +151,9 @@ def verify_hash(user, password):
             line = line.split("\t")
             if line[0] == user:
                 # TODO: Generate the hashed password
-                hashed_password = hashlib.sha512((password + salt_string).encode()).hexdigest()
-                return hashed_password == line[2]
+                salt_string = line[1]
+                hashed_pass = hashlib.sha512((password + salt_string).encode()).hexdigest()
+                return hashed_pass == line[2]
         reader.close()
     except FileNotFoundError:
         return False

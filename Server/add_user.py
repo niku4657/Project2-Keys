@@ -6,12 +6,8 @@
     The solution contains the same number of lines (plus imports)
 """
 import hashlib
-import string
-import random
+from Crpto import Random
 
-def salt(stringLength=16):
-    letters = string.ascii_lowercase + string.digits
-    return ''.join(random.choice(letters) for i in range(stringLength))
 
 
 user = input("Enter a username: ")
@@ -20,8 +16,8 @@ password = input("Enter a password: ")
 # TODO: Create a salt and hash the password
 # salt = Kathleen implemented this
 # hashed_password = Kathleen created this
-salt = salt()
-hashed_password = hashlib.sha512((password + salt).encode()).hexdigest()
+salt = str(random.get_random_bytes(32))#salt()
+hashed_password = hashlib.sha256((password + salt).encode()).hexdigest()
 
 
 try:

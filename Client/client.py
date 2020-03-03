@@ -52,24 +52,109 @@ def encrypt_handshake(session_key):
     return encrypt
 
 
-# Encrypts the message using AES. Same as server function
-def encrypt_message(message, session_key):
-    # TODO: Implement this function
-    message = pad_message(message)
-    iv = Random.new().read(16)
-    cipher = AES.new(session_key, AES.MODE_CBC, iv)
-    return base64.b64encode(cipher.encrypt(message))
+# # Encrypts the message using AES. Same as server function
+# def encrypt_message(message, session_key):
+#     # TODO: Implement this function
+#     message = pad_message(message)
+#     iv = Random.new().read(16)
+#     cipher = AES.new(session_key, AES.MODE_CBC, iv)
+#     return base64.b64encode(cipher.encrypt(message))
+#
+#
+# # Decrypts the message using AES. Same as server function
+# def decrypt_message(message, session_key):
+#     # TODO: Implement this function
+#     iv = message[:16]
+#     message = base64.b64decode(message)
+#
+#     cipher = AES.new(session_key, AES.MODE_CBC, iv)
+#     return unpad_message(cipher.decrypt(message[16:])).decode('utf-8')
 
 
-# Decrypts the message using AES. Same as server function
-def decrypt_message(message, session_key):
-    # TODO: Implement this function
-    iv = message[:16]
-    message = base64.b64decode(message)
+# def encrypt_message(message, session_key):
+#     # TODO: Implement this function
+#     message = pad_message(message)
+#     # ivector = Random.new().read(16)
+#     ivector = message
+#     cipher = AES.new(session_key, AES.MODE_CBC, ivector)
+#
+#     return base64.b64encode(cipher.encrypt(message))
+#
+#
+# # Decrypts the message using AES. Same as server function
+# def decrypt_message(message, session_key):
+#     # TODO: Implement this function
+#     ivector = message
+#     decode_message = base64.b64decode(message)
+#     # ivector = Random.new().read(16)
+#
+#
+#     cipher = AES.new(session_key, AES.MODE_CBC, ivector)
+#
+#     return unpad_message(cipher.decrypt(decode_message)).decode('utf-8')
 
-    cipher = AES.new(session_key, AES.MODE_CBC, iv)
-    return unpad_message(cipher.decrypt(message[16:])).decode('utf-8')
+# TODO: Write a function that decrypts a message using the session key
 
+# def decrypt_message(client_message, session_key, ):
+#
+#
+#     decoded_message = base64.b64decode(client_message)
+#
+#
+#
+#     cipher = AES.new(session_key, AES.MODE_ECB)
+#
+#     decrypted_message = cipher.decrypt(decoded_message)
+#
+#     return unpad_message(decrypted_message).decode('utf-8')
+#
+#
+#
+#
+#
+# # TODO: Encrypt a message using the session key
+#
+# def encrypt_message(message, session_key):
+#
+#     padded_message = pad_message(message)
+#
+#
+#     cipher = AES.new(session_key, AES.MODE_ECB)
+#
+#     return base64.b64encode(cipher.encrypt(padded_message))
+
+# def encrypt_message(message, session_key):
+#     # TODO: Implement this function
+#     # ivector = message[:16]
+#     ivector = os.urandom(16)
+#     message = pad_message(message)
+#     # ivector = Random.new().read(16)
+#
+#     cipher = AES.new(session_key, AES.MODE_CBC, ivector)
+#
+#     return base64.b64encode(cipher.encrypt(message))
+#
+#
+# # Decrypts the message using AES. Same as server function
+# def decrypt_message(message, session_key):
+#     # TODO: Implement this function
+#     # ivector = message[:16]
+#     decode_message = base64.b64decode(message)
+#     # ivector = Random.new().read(16)
+#     ivector = message[:16]
+#
+#     cipher = AES.new(session_key, AES.MODE_CBC, ivector)
+#
+#     return unpad_message(cipher.decrypt(decode_message)).decode('utf-8')
+
+
+def encrypt_message(message,session_key):
+    cipher = AES.new(session_key)
+    return cipher.encrypt(pad_message(message))
+
+def decrypt_message(message,session_key):
+    cipher = AES.new(session_key)
+    return cipher.decrypt(unpad_message(message))
 
 # Sends a message over TCP
 def send_message(sock, message):
@@ -86,7 +171,6 @@ def receive_message(sock):
 
 
 def main():
-    generate_key()
 
 
     user = input("What's your username? ")
@@ -124,7 +208,9 @@ def main():
 
         # TODO: Receive and decrypt response from server
         received_message = receive_message(sock)
-        decrypt_message(received_message, key)
+        print(decrypt_message(received_message, key))
+
+        # send_message(sock,"WIRESHARK".endcode())
 
     finally:
         print('closing socket')
