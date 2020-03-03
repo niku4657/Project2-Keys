@@ -6,7 +6,7 @@
     The solution contains the same number of lines (plus imports)
 """
 import hashlib
-from Crpto import Random
+from Crypto import Random
 
 
 
@@ -16,7 +16,7 @@ password = input("Enter a password: ")
 # TODO: Create a salt and hash the password
 # salt = Kathleen implemented this
 # hashed_password = Kathleen created this
-salt = str(random.get_random_bytes(32))#salt()
+salt = str(Random.get_random_bytes(32))#salt()
 hashed_password = hashlib.sha256((password + salt).encode()).hexdigest()
 
 
