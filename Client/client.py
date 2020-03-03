@@ -135,7 +135,7 @@ def main():
         message2 = receive_message(sock)
         print(decrypt_message(message2, key))
 
-        # send_message(sock, "WIRESHARK".encode())
+        send_message(sock, "WIRESHARK".encode())
 
     finally:
 
