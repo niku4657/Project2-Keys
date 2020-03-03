@@ -1,29 +1,49 @@
 """
+
     client.py - Connect to an SSL server
 
+
+
     CSCI 3403
+
     Authors: Matt Niemiec and Abigail Fernandes
+
     Number of lines of code in solution: 117
+
         (Feel free to use more or less, this
+
         is provided as a sanity check)
 
-    Put your team members' names: Niharika Kunapuli, Kathleen Tran, Yifei Niu
+
+
+    Put your team members' names:  Niharika Kunapuli, Kathleen Tran, Yifei Niu
+
+
+
+
 
 
 
 """
 
+
+
 import socket
 import os
+import sys
+import base64
+import Crypto
 from Crypto.Cipher import AES
 from Crypto.PublicKey import RSA
-from Crypto import Random
-import base64
-import hashlib
+
 
 
 host = "localhost"
+
 port = 10001
+
+
+
 
 
 # A helper function that you may find useful for AES encryption
@@ -31,47 +51,39 @@ port = 10001
 def pad_message(message):
     return message + " "*((16-len(message))%16)
 
-#Added function to unpad message before decrypting
-def unpad_message(message):
-    return message[:-ord(message[len(message)-1:])]
-
 # TODO: Generate a cryptographically random AES key
 def generate_key():
-    # TODO: Implement this function
+    #AES has 128 bits or 16 bytes
     return os.urandom(16)
 
 
 # Takes an AES session key and encrypts it using the appropriate
 # key and return the value
+#AES key encrypted with public key
 def encrypt_handshake(session_key):
-    # TODO: Implement this function
     public = RSA.importKey(open('ppkey.txt.pub','r').read())
-    encrypted = str(public.encrypt(session_key, 16))
-    return encrypted
+    #aes is 16 bytes, encrypt the session_key with 16 bytes too
+    encrypted_key = public.encrypt(session_key, os.urandom(16))
+    #return only first part of tuple
+    return encrypted_key[0]
 
 
 # Encrypts the message using AES. Same as server function
 def encrypt_message(message, session_key):
     # TODO: Implement this function
-    message = pad_message(message)
-    iv = Random.new().read(16)
-    cipher = AES.new(session_key, AES.MODE_CBC, iv)
-    return base64.b64encode(iv + cipher.encrypt(message))
-
+    cipher = AES.new(session_key)
+    return cipher.encrypt(pad_message(message))
 
 # Decrypts the message using AES. Same as server function
 def decrypt_message(message, session_key):
     # TODO: Implement this function
-    message = base64.b64decode(message)
-    iv = message[:16]
-    cipher = AES.new(session_key, AES.MODE_CBC, iv)
-    return unpad_message(cipher.decrypt(message[16:])).decode('utf-8')
+    cipher = AES.new(session_key)
+    return cipher.decrypt(message)
 
 
 # Sends a message over TCP
 def send_message(sock, message):
     sock.sendall(message)
-
 
 # Receive a message from TCP
 def receive_message(sock):
@@ -79,8 +91,11 @@ def receive_message(sock):
     return data
 
 
+
+
+
 def main():
-    generate_key()
+    #generate_key
     user = input("What's your username? ")
     password = input("What's your password? ")
 
@@ -93,6 +108,7 @@ def main():
     sock.connect(server_address)
 
     try:
+
         # Message that we need to send
         message = user + ' ' + password
 
@@ -111,17 +127,26 @@ def main():
             exit(0)
 
         # TODO: Encrypt message and send to server
-        encryptedMessage = encrypt_message(message, key)
-        send_message(sock, em)
+        encrypted_mess = encrypt_message(message,key)
+        send_message(sock, encrypted_mess)
 
         # TODO: Receive and decrypt response from server
-        if(receive_message(sock)):
-            print("client received_message", decrypt_message(receive_message(sock), key))
-     
+
+        message2 = receive_message(sock)
+        print(decrypt_message(message2, key))
+
+        # send_message(sock, "WIRESHARK".encode())
+
     finally:
+
         print('closing socket')
+
         sock.close()
 
 
+
+
+
 if __name__ in "__main__":
+
     main()
