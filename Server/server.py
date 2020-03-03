@@ -1,68 +1,75 @@
 """
+
     server.py - host an SSL server that checks passwords
 
+
+
     CSCI 3403
+
     Authors: Matt Niemiec and Abigail Fernandes
+
     Number of lines of code in solution: 140
+
         (Feel free to use more or less, this
+
         is provided as a sanity check)
+
+
 
     Put your team members' names: Niharika Kunapuli, Kathleen Tran, Yifei Niu
 
 
 
+
 """
 
+
+
 import socket
+import Crypto
+import sys
 import os
 from Crypto.Cipher import AES
 from Crypto.PublicKey import RSA
-from Crypto import Random
-import base64
-import hashlib
+from Crypto.Hash import SHA256
+from pathlib import PureWindowsPath
 
-host = "localhost"
+
+host = 'localhost'
+
 port = 10001
 
 
+
+
+
 # A helper function. It may come in handy when performing symmetric encryption
+# Is this the best way to pad a message?!?!
 def pad_message(message):
     return message + " " * ((16 - len(message)) % 16)
 
-#Added function to unpad message before decrypting
-def unpad_message(message):
-    return message[:-ord(message[len(message)-1:])]
-
 # Write a function that decrypts a message using the server's private key
 def decrypt_key(session_key):
-    # TODO: Implement this function
     private = RSA.importKey(open('ppkey.txt', 'r').read())
-    encrypted_tuple = eval(session_key)
-    return private.decrypt(encrypted_tuple)
+    decrypted_key = private.decrypt(session_key)
+    return decrypted_key
 
 
 # Write a function that decrypts a message using the session key
 def decrypt_message(client_message, session_key):
     # TODO: Implement this function
-    message = base64.b64decode(message)
-    iv = message[:16]
-    cipher = AES.new(session_key, AES.MODE_CBC, iv)
-    return unpad_message(cipher.decrypt(message[16:])).decode('utf-8')
-
+    cipher = AES.new(session_key)
+    return cipher.decrypt(client_message)
 
 # Encrypt a message using the session key
 def encrypt_message(message, session_key):
     # TODO: Implement this function
-    message = pad_message(message)
-    iv = Random.new().read(16)
-    cipher = AES.new(session_key, AES.MODE_CBC, iv)
-    return base64.b64encode(iv + cipher.encrypt(message))
-
+    cipher = AES.new(session_key)
+    return cipher.encrypt(message)
 
 # Receive 1024 bytes from the client
 def receive_message(connection):
     return connection.recv(1024)
-
 
 # Sends message to client
 def send_message(connection, data):
@@ -84,12 +91,14 @@ def verify_hash(user, password):
             line = line.split("\t")
             if line[0] == user:
                 # TODO: Generate the hashed password
-                hashed_password = hashlib.sha512((password + salt).encode('utf-8')).hexdigest()
+                password_and_salt = password+line[1]
+                hashed_password = SHA256.new(str.encode(password_and_salt)).hexdigest()
                 return hashed_password == line[2]
         reader.close()
     except FileNotFoundError:
         return False
     return False
+
 
 
 def main():
@@ -108,7 +117,6 @@ def main():
             connection, client_address = sock.accept()
             try:
                 print('connection from', client_address)
-
                 # Receive encrypted key from client
                 encrypted_key = receive_message(connection)
 
@@ -122,21 +130,24 @@ def main():
                 ciphertext_message = receive_message(connection)
 
                 # TODO: Decrypt message from client
-                plainMessage = decrypt_message(ciphertext_message, plaintext_key)
-                
+                decrypted_message = decrypt_message(ciphertext_message,plaintext_key)
+
                 # TODO: Split response from user into the username and password
-                user, password = plainMessage.split()
-                if verify_hash(user, password):
-                    plainResponse = "User successfully authenticated!"
+                user_password = decrypted_message.split()
+
+                username = user_password[0].decode("utf-8")
+                password = user_password[1].decode("utf-8")
+
+                if verify_hash(username, password):
+                    authenticationMessage = "User successfully authenticated"
                 else:
-                    plainResponse = "Password or username incorrect"
-                
+                    authenticationMessage = "Password or username incorrect"
                 # TODO: Encrypt response to client
-                cipheredResponse = encrypt_message(plainResponse, encrypted_key)
-                
-                # Send encrypted response
-                send_message(connection, cipheredResponse)
+                msg = encrypt_message(pad_message(authenticationMessage), plaintext_key)
+                send_message(connection, msg)
+
             finally:
+
                 # Clean up the connection
                 connection.close()
     finally:
@@ -144,4 +155,5 @@ def main():
 
 
 if __name__ in "__main__":
+
     main()
