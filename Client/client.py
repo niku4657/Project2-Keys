@@ -7,71 +7,77 @@
         (Feel free to use more or less, this
         is provided as a sanity check)
 
-    Put your team members' names: Niharika Kunapuli, Kathleen Tran, Yifei Niu
+    Put your team members' names:
 
 
 
 """
-
-import socket
-import os
-from Crypto.Cipher import AES
-from Crypto.PublicKey import RSA
-from Crypto import Random
 import base64
 import hashlib
+import hashlib
+import os
+import socket
+import uuid
+from Crypto import Random
+from Crypto.Cipher import AES
+from Crypto.Cipher import PKCS1_OAEP
+from Crypto.PublicKey import RSA
+from Crypto.Random import random
+import string
+import random
 
-
+letters = string.ascii_lowercase + string.digits
+iv = ''.join(random.choice(letters) for i in range(16))
 host = "localhost"
 port = 10001
 
 
-# A helper function that you may find useful for AES encryption
-# Is this the best way to pad a message?!?!
+# Pads message with enough space to make its length a multiple of 16
 def pad_message(message):
-    return message + " "*((16-len(message))%16)
+    addOn = " "*((16-len(message))%16)
+    return message+addOn
 
-# #Added function to unpad message before decrypting
-# def unpad_message(message):
-#     return message[:-ord(message[len(message)-1:])]
-def unpad_message(message):
-    return message.rstrip()
+# removes spaces from the end (see pad_message description)
+# however, if message intentionally had spaces at the end ... tough
+def unpad_message(m):
+	return m.rstrip()
 
-# TODO: Generate a cryptographically random AES key
+# TODO: Generate a random AES key
+# done
 def generate_key():
-    # TODO: Implement this function
     return os.urandom(16)
 
 
-# Takes an AES session key and encrypts it using the appropriate
-# key and return the value
+# TODO: Takes an AES session key and encrypts it using the server's
+# TODO: public key and returns the value
 def encrypt_handshake(session_key):
-    # TODO: Implement this function
-    public = RSA.importKey(open('ppkey.txt.pub','r').read())
-    encrypted = str(public.encrypt(session_key, 16))
-    return encrypted
+    # ALL of id_rsa.pub is the public key
+    pubRSAKey = RSA.importKey(open('ppkey.txt.pub','r').read())
+    encrypted_key = str(pubRSAKey.encrypt(session_key, 32))
+    return encrypted_key
 
-
-# Encrypts the message using AES. Same as server function
+# TODO: Encrypts the message using AES. Same as server function
 def encrypt_message(message, session_key):
-    # TODO: Implement this function
-    message = pad_message(message)
-    iv = Random.new().read(16)
-    cipher = AES.new(session_key, AES.MODE_CBC, iv)
-    return base64.b64encode(iv + cipher.encrypt(message))
+	padded_message = pad_message(message)
+
+	# MODE_CBC = cipher block chaining
+	cipher = AES.new(session_key, AES.MODE_CBC, iv)
+	return base64.b64encode(cipher.encrypt(padded_message))
 
 
-# Decrypts the message using AES. Same as server function
+# TODO: Decrypts the message using AES. Same as server function
 def decrypt_message(message, session_key):
-    # TODO: Implement this function
-    message = base64.b64decode(message)
-    iv = message[:16]
-    cipher = AES.new(session_key, AES.MODE_CBC, iv)
-    return unpad_message(cipher.decrypt(message[16:])).decode('utf-8')
+    decoded_message = base64.b64decode(message)
 
+    cipher = AES.new(session_key, AES.MODE_CBC, iv)
+    decrypted_message = cipher.decrypt(decoded_message)
+    return unpad_message(decrypted_message).decode('utf-8')
 
 # Sends a message over TCP
 def send_message(sock, message):
+    if not message:
+        print("Can't send empty string")
+        return
     if type(message) != bytes:
         message = message.encode()
     sock.sendall(message)
@@ -82,9 +88,8 @@ def receive_message(sock):
     data = sock.recv(1024)
     return data
 
-def main():
-    generate_key()
 
+def main():
 
     user = input("What's your username? ")
     password = input("What's your password? ")
@@ -101,14 +106,17 @@ def main():
         # Message that we need to send
         message = user + ' ' + password
 
-        # Generate random AES key
-        key = generate_key()
+        # TODO: Generate random AES key
+        aes_key = generate_key()
 
-        # Encrypt the session key using server's public key
-        encrypted_key = encrypt_handshake(key)
+        # TODO: Encrypt the session key using server's public key
+        encrypted_session_key = encrypt_handshake(aes_key)
 
-        # Initiate handshake
-        send_message(sock, encrypted_key)
+        # encrypting user info using aes key
+       	encrypted_message = encrypt_message(message, aes_key)
+
+        # TODO: Initiate handshake
+        send_message(sock, encrypted_session_key)
 
         # Listen for okay from server (why is this necessary?)
         if receive_message(sock).decode() != "okay":
@@ -116,17 +124,17 @@ def main():
             exit(0)
 
         # TODO: Encrypt message and send to server
-        secretMessage = encrypt_message(message, key)
-        send_message(sock, secretMessage)
+        send_message(sock, encrypted_message)
 
-        # TODO: Receive and decrypt response from server
-        serverMessage = receive_message(sock)
-        if serverMessage:
-            print("client received the message", decrypt_message(serverMessage, key))
+        # TODO: Receive and decrypt response from server and print
+        # should be getting back encrypted aes key
+        received_message = receive_message(sock)
+        if received_message:
+            print("client received_message", decrypt_message(received_message, aes_key))
+
     finally:
         print('closing socket')
         sock.close()
-
 
 if __name__ in "__main__":
     main()

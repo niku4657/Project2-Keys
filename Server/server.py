@@ -7,58 +7,61 @@
         (Feel free to use more or less, this
         is provided as a sanity check)
 
-    Put your team members' names: Niharika Kunapuli, Kathleen Tran, Yifei Niu
+    Put your team members' names:
 
 
 
 """
-
-import socket
-import os
-from Crypto.Cipher import AES
-from Crypto.PublicKey import RSA
-from Crypto import Random
 import base64
 import hashlib
+import hashlib
+import os
+import socket
+import uuid
+from Crypto import Random
+from Crypto.Cipher import AES
+from Crypto.Cipher import PKCS1_OAEP
+from Crypto.PublicKey import RSA
+from Crypto.Random import random
+
+iv = "G4XO4L\X<J;MPPLD"
 
 host = "localhost"
 port = 10001
 
 
-# A helper function. It may come in handy when performing symmetric encryption
+# Pads message with enough space to make its length a multiple of 16
 def pad_message(message):
-    return message + " " * ((16 - len(message)) % 16)
+    addOn = " "*((16-len(message))%16)
+    return message+addOn
 
-# Added function to unpad message before decrypting
-def unpad_message(message):
-    return message.rstrip()
+# removes spaces from the end (see pad_message description)
+# however, if message intentionally had spaces at the end ... tough
+def unpad_message(m):
+    return m.rstrip()
 
-# Write a function that decrypts a message using the server's private key
+# TODO: Write a function that decrypts a message using the server's private key
 def decrypt_key(session_key):
-    # TODO: Implement this function
-    privatekey = RSA.importKey(open('ppkey.txt', 'r').read())
+    private_key = RSA.importKey(open('ppkey.txt', 'r').read())
     encrypted_tuple = eval(session_key)
-    return privatekey.decrypt(encrypted_tuple)
+    return private_key.decrypt(encrypted_tuple)
 
-
-# Write a function that decrypts a message using the session key
-# MODE_CBC = cipher block chaining
+# TODO: Write a function that decrypts a message using the session key
 def decrypt_message(client_message, session_key):
-    # TODO: Implement this function
-    message = base64.b64decode(client_message)
-    ivector = Random.new().read(16) #message[:16]
-    cipher = AES.new(session_key, AES.MODE_CBC, ivector )
-    d_message = cipher.decrypt(message)
-    return unpad_message(d_message).decode('utf-8')
+    decoded_message = base64.b64decode(client_message)
+
+    cipher = AES.new(session_key, AES.MODE_CBC, iv)
+    decrypted_message = cipher.decrypt(decoded_message)
+    return unpad_message(decrypted_message).decode('utf-8')
 
 
-# Encrypt a message using the session key
+# TODO: Encrypt a message using the session key
 def encrypt_message(message, session_key):
-    # TODO: Implement this function
-    message = pad_message(message)
-    ivector = Random.new().read(16)
-    cipher = AES.new(session_key, AES.MODE_CBC, ivector)
-    return base64.b64encode(ivector + cipher.encrypt(message))
+    padded_message = pad_message(message)
+
+    # MODE_CBC = cipher block chaining
+    cipher = AES.new(session_key, AES.MODE_CBC, iv)
+    return base64.b64encode(cipher.encrypt(padded_message))
 
 
 # Receive 1024 bytes from the client
@@ -78,14 +81,14 @@ def send_message(connection, data):
 
 # A function that reads in the password file, salts and hashes the password, and
 # checks the stored hash of the password to see if they are equal. It returns
-# True if they are and False if they aren't. The delimiters are newlines and tabs
+# True if they are and False if they aren't
 def verify_hash(user, password):
     try:
         reader = open("passfile.txt", 'r')
         for line in reader.read().split('\n'):
             line = line.split("\t")
             if line[0] == user:
-                # TODO: Generate the hashed password
+                salt_string = line[1]
                 hashed_password = hashlib.sha512((password + salt_string).encode()).hexdigest()
                 return hashed_password == line[2]
         reader.close()
@@ -111,41 +114,37 @@ def main():
             try:
                 print('connection from', client_address)
 
-                # Receive encrypted key from client
-                encrypted_key = receive_message(connection)
+                # Receive public-key encrypted aes-key from client
+                encrypted_aes_key = receive_message(connection)
 
                 # Send okay back to client
                 send_message(connection, "okay")
 
                 # Decrypt key from client
-                plaintext_key = decrypt_key(encrypted_key)
+                plaintext_key = decrypt_key(encrypted_aes_key)
 
                 # Receive encrypted message from client
                 ciphertext_message = receive_message(connection)
 
-                # TODO: Decrypt message from client
-                original = decrypt_message(ciphertext_message, plaintext_key)
+                # Decrypt message from client
+                plaintext_message = decrypt_message(ciphertext_message, plaintext_key)
 
-                # TODO: Split response from user into the username and password
-                splitOriginal = original.splitlines(0)
-                user = splitOriginal[0]
-                password = splitOriginal[1]
+                # Split response from user into the username and password
+                user, password = plaintext_message.split()
                 if verify_hash(user, password):
-                    response = "User successfully authenticated!"
+                    plaintext_response = "User successfully authenticated!"
                 else:
-                    response = "Password or username incorrect"
-
-                # TODO: Encrypt response to client
-                response2client = encrypt_message(response, plaintext_key)#encrypted_key)
+                    plaintext_response = "Password or username incorrect"
+                # Encrypt response to client
+                ciphertext_response = encrypt_message(plaintext_response, plaintext_key)
 
                 # Send encrypted response
-                send_message(connection, response2client)
+                send_message(connection, ciphertext_response)
             finally:
                 # Clean up the connection
                 connection.close()
     finally:
         sock.close()
-
 
 if __name__ in "__main__":
     main()
