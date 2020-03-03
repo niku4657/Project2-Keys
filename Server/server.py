@@ -41,24 +41,46 @@ def decrypt_key(session_key):
     return privatekey.decrypt(encrypted_tuple)
 
 
-# Write a function that decrypts a message using the session key
-# MODE_CBC = cipher block chaining
-def decrypt_message(client_message, session_key):
-    # TODO: Implement this function
-    message = base64.b64decode(client_message)
-    ivector = Random.new().read(16) #message[:16]
-    cipher = AES.new(session_key, AES.MODE_CBC, ivector )
-    d_message = cipher.decrypt(cipher)
-    return unpad_message(d_message).decode('utf-8')
+# # Write a function that decrypts a message using the session key
+# # MODE_CBC = cipher block chaining
+# def decrypt_message(client_message, session_key,ivector):
+#     # TODO: Implement this function
+#     d_message = base64.b64decode(client_message)
+#     # ivector = os.random(16) #16 random bytes
+#     cipher = AES.new(session_key, AES.MODE_CBC, ivector )
+#     # d_message = cipher.decrypt(ivector)
+#     iv = client_message
+#     return unpad_message(cipher.decrypt(d_message)).decode('utf-8')
+#
+#
+# # Encrypt a message using the session key
+# def encrypt_message(message, session_key,ivector):
+#     # TODO: Implement this function
+#     message = pad_message(message)
+#     ivector = os.urandom(16)
+#     cipher = AES.new(session_key, AES.MODE_CBC, ivector)
+#     return base64.b64encode(cipher.encrypt(message))
 
 
-# Encrypt a message using the session key
 def encrypt_message(message, session_key):
     # TODO: Implement this function
     message = pad_message(message)
     ivector = Random.new().read(16)
     cipher = AES.new(session_key, AES.MODE_CBC, ivector)
     return base64.b64encode(ivector + cipher.encrypt(message))
+
+
+# Decrypts the message using AES. Same as server function
+def decrypt_message(message, session_key):
+    # TODO: Implement this function
+    ivector = decode_message[:16]
+    decode_message = base64.b64decode(message)
+    # ivector = Random.new().read(16)
+
+
+    cipher = AES.new(session_key, AES.MODE_CBC, ivector)
+
+    return unpad_message(cipher.decrypt(decode_message[16:])).decode('utf-8')
 
 
 # Receive 1024 bytes from the client
@@ -122,6 +144,7 @@ def main():
 
                 # Receive encrypted message from client
                 ciphertext_message = receive_message(connection)
+                # iv = ciphertext_message
 
                 # TODO: Decrypt message from client
                 original = decrypt_message(ciphertext_message, plaintext_key)
